@@ -20,6 +20,61 @@ echo -e "${CYAN}   ptero-theme auto installer${RESET}"
 echo -e "${CYAN}===================================${RESET}"
 echo
 
+FROM_REPO=0
+REPO_URL="${THEME_REPO:-https://github.com/dev-malvryx/ptero-theme.git}"
+REPO_BRANCH="${THEME_BRANCH:-main}"
+PTERO_ARG=""
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./deploy.sh [panel_path]
+  ./deploy.sh --from-repo [--repo URL] [--branch BRANCH] [panel_path]
+
+Options:
+  --from-repo      Pull or clone theme repo before merge/install.
+  --repo URL       Theme git repository URL.
+  --branch NAME    Branch to checkout when using --from-repo.
+  -h, --help       Show this help.
+
+Env:
+  PTERO_DIR        Panel path (alternative to positional path).
+  THEME_REPO       Default repo URL for --from-repo.
+  THEME_BRANCH     Default repo branch for --from-repo.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --from-repo)
+    FROM_REPO=1
+    shift
+    ;;
+  --repo)
+    [[ $# -lt 2 ]] && fail "Missing value for --repo"
+    REPO_URL="$2"
+    shift 2
+    ;;
+  --branch)
+    [[ $# -lt 2 ]] && fail "Missing value for --branch"
+    REPO_BRANCH="$2"
+    shift 2
+    ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    if [[ -z "$PTERO_ARG" ]]; then
+      PTERO_ARG="$1"
+      shift
+    else
+      fail "Unknown argument: $1"
+    fi
+    ;;
+  esac
+done
+
 is_panel_root() {
   local dir="$1"
   [[ -f "$dir/artisan" && -d "$dir/resources/scripts" && -f "$dir/public/index.php" ]]
@@ -47,7 +102,7 @@ find_panel_root() {
   return 1
 }
 
-PTERO_DIR="${1:-${PTERO_DIR:-}}"
+PTERO_DIR="${PTERO_ARG:-${PTERO_DIR:-}}"
 if [[ -z "$PTERO_DIR" ]]; then
   PTERO_DIR="$(find_panel_root "$SCRIPT_DIR" || true)"
 fi
@@ -55,7 +110,38 @@ fi
 is_panel_root "$PTERO_DIR" || fail "Invalid panel directory: $PTERO_DIR"
 ok "Panel root: $PTERO_DIR"
 
+REMOTE_THEME_BASE=""
+if [[ "$FROM_REPO" -eq 1 ]]; then
+  command -v git >/dev/null 2>&1 || fail "git is required for --from-repo"
+  CACHE_ROOT="${TMPDIR:-/tmp}/ptero-theme-cache"
+  REMOTE_THEME_BASE="$CACHE_ROOT/$(echo "$REPO_URL" | sed 's#[^a-zA-Z0-9._-]#_#g')"
+
+  mkdir -p "$CACHE_ROOT"
+  if [[ -d "$REMOTE_THEME_BASE/.git" ]]; then
+    log "Updating theme repo cache..."
+    git -C "$REMOTE_THEME_BASE" fetch --all --prune
+    git -C "$REMOTE_THEME_BASE" checkout "$REPO_BRANCH"
+    git -C "$REMOTE_THEME_BASE" pull --ff-only origin "$REPO_BRANCH"
+  else
+    log "Cloning theme repo..."
+    git clone --branch "$REPO_BRANCH" --depth 1 "$REPO_URL" "$REMOTE_THEME_BASE"
+  fi
+
+  ok "Theme repo ready: $REMOTE_THEME_BASE ($REPO_BRANCH)"
+fi
+
 find_custom_root() {
+  if [[ -n "$REMOTE_THEME_BASE" ]]; then
+    local remote_candidates=(
+      "$REMOTE_THEME_BASE/custom"
+      "$REMOTE_THEME_BASE"
+    )
+
+    for c in "${remote_candidates[@]}"; do
+      [[ -d "$c/scripts" ]] && { echo "$c"; return 0; }
+    done
+  fi
+
   local candidates=(
     "$SCRIPT_DIR/custom"
     "$SCRIPT_DIR"
