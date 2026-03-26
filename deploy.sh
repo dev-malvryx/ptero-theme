@@ -198,6 +198,15 @@ fi
 log "Building panel assets..."
 cd "$PTERO_DIR"
 
+log "Refreshing Baseline browser mapping data..."
+if command -v yarn >/dev/null 2>&1; then
+  yarn add -D baseline-browser-mapping@latest >/dev/null 2>&1 || warn "Could not refresh baseline-browser-mapping with yarn; continuing."
+elif command -v npm >/dev/null 2>&1; then
+  npm i baseline-browser-mapping@latest -D >/dev/null 2>&1 || warn "Could not refresh baseline-browser-mapping with npm; continuing."
+else
+  warn "No package manager available to refresh baseline-browser-mapping."
+fi
+
 if command -v node >/dev/null 2>&1; then
   NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
   if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR >= 17 )); then
