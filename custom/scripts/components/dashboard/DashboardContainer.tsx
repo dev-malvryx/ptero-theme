@@ -16,6 +16,7 @@ import { useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import type { ApplicationStore } from '@/state';
 
 import BeforeContent from '@blueprint/components/Dashboard/Serverlist/BeforeContent';
 import AfterContent from '@blueprint/components/Dashboard/Serverlist/AfterContent';
@@ -62,8 +63,8 @@ export default () => {
 
     const [page, setPage] = useState(!isNaN(defaultPage) && defaultPage > 0 ? defaultPage : 1);
     const { clearFlashes, clearAndAddHttpError } = useFlash();
-    const uuid = useStoreState((state) => state.user.data!.uuid);
-    const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
+    const uuid = useStoreState((state: ApplicationStore) => state.user.data!.uuid);
+    const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
     const [showOnlyAdmin, setShowOnlyAdmin] = usePersistedState(`${uuid}:show_all_servers`, false);
 
     const { data: servers, error } = useSWR<PaginatedResult<Server>>(
@@ -96,7 +97,9 @@ export default () => {
                     Dashboard Overview
                 </DashboardTitle>
                 <DashboardSub>
-                    <FontAwesomeIcon icon={faLayerGroup} css={tw`mr-2`} />
+                    <span className={'mr-2'}>
+                        <FontAwesomeIcon icon={faLayerGroup} />
+                    </span>
                     Manage servers with a cleaner, focused workspace.
                 </DashboardSub>
                 {rootAdmin && (
@@ -118,7 +121,7 @@ export default () => {
                     {({ items }) =>
                         items.length > 0 ? (
                             items.map((server, index) => (
-                                <ServerRow key={server.uuid} server={server} css={index > 0 ? tw`mt-3` : undefined} />
+                                <ServerRow key={server.uuid} server={server} className={index > 0 ? 'mt-3' : undefined} />
                             ))
                         ) : (
                             <EmptyState>

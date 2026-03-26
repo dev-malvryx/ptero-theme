@@ -100,29 +100,29 @@ export default ({ server, className }: { server: Server; className?: string }) =
 
     return (
         <Row to={`/server/${server.id}`} className={className} $status={stats?.status}>
-            <div css={tw`grid grid-cols-12 gap-4 md:gap-6 items-center`}>
-                <div css={tw`flex items-start col-span-12 sm:col-span-5 lg:col-span-6`}>
-                    <div css={tw`mr-4 text-neutral-400 mt-1`}>
+            <div className={'grid grid-cols-12 gap-4 md:gap-6 items-center'}>
+                <div className={'flex items-start col-span-12 sm:col-span-5 lg:col-span-6'}>
+                    <div className={'mr-4 text-neutral-400 mt-1'}>
                         <FontAwesomeIcon icon={faServer} />
                     </div>
-                    <div css={tw`min-w-0`}>
+                    <div className={'min-w-0'}>
                         <BeforeEntryName />
-                        <p css={tw`text-lg text-neutral-100 break-words`}>{server.name}</p>
+                        <p className={'text-lg text-neutral-100 break-words'}>{server.name}</p>
                         <AfterEntryName />
                         {!!server.description && (
                             <div>
                                 <BeforeEntryDescription />
-                                <p css={tw`text-sm text-neutral-400 break-words line-clamp-2`}>{server.description}</p>
+                                <p className={'text-sm text-neutral-400 break-words line-clamp-2'}>{server.description}</p>
                                 <AfterEntryDescription />
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div css={tw`hidden lg:block lg:col-span-2`}>
-                    <div css={tw`flex items-center justify-start text-neutral-400`}>
+                <div className={'hidden lg:block lg:col-span-2'}>
+                    <div className={'flex items-center justify-start text-neutral-400'}>
                         <FontAwesomeIcon icon={faEthernet} />
-                        <p css={tw`text-xs ml-2 truncate`}>
+                        <p className={'text-xs ml-2 truncate'}>
                             {server.allocations
                                 .filter((alloc) => alloc.isDefault)
                                 .map((allocation) => (
@@ -134,14 +134,14 @@ export default ({ server, className }: { server: Server; className?: string }) =
                     </div>
                 </div>
 
-                <div css={tw`col-span-12 lg:col-span-4`}> 
+                <div className={'col-span-12 lg:col-span-4'}>
                     {!stats || isSuspended ? (
                         isSuspended ? (
-                            <div css={tw`text-left lg:text-center`}>
+                            <div className={'text-left lg:text-center'}>
                                 <StatusPill $danger>{server.status === 'suspended' ? 'Suspended' : 'Connection Error'}</StatusPill>
                             </div>
                         ) : server.isTransferring || server.status ? (
-                            <div css={tw`text-left lg:text-center`}>
+                            <div className={'text-left lg:text-center'}>
                                 <StatusPill>
                                     {server.isTransferring
                                         ? 'Transferring'
@@ -157,27 +157,27 @@ export default ({ server, className }: { server: Server; className?: string }) =
                         )
                     ) : (
                         <React.Fragment>
-                            <div css={tw`grid grid-cols-1 sm:grid-cols-3 gap-3`}>
+                            <div className={'grid grid-cols-1 sm:grid-cols-3 gap-3'}>
                                 <div>
-                                    <div css={tw`flex items-center`}>
+                                    <div className={'flex items-center'}>
                                         <Icon icon={faMicrochip} $alarm={alarms.cpu} />
                                         <IconDescription $alarm={alarms.cpu}>{stats.cpuUsagePercent.toFixed(2)} %</IconDescription>
                                     </div>
-                                    <p css={tw`text-xs text-neutral-500 mt-1`}>of {cpuLimit}</p>
+                                    <p className={'text-xs text-neutral-500 mt-1'}>of {cpuLimit}</p>
                                 </div>
                                 <div>
-                                    <div css={tw`flex items-center`}>
+                                    <div className={'flex items-center'}>
                                         <Icon icon={faMemory} $alarm={alarms.memory} />
                                         <IconDescription $alarm={alarms.memory}>{bytesToString(stats.memoryUsageInBytes)}</IconDescription>
                                     </div>
-                                    <p css={tw`text-xs text-neutral-500 mt-1`}>of {memoryLimit}</p>
+                                    <p className={'text-xs text-neutral-500 mt-1'}>of {memoryLimit}</p>
                                 </div>
                                 <div>
-                                    <div css={tw`flex items-center`}>
+                                    <div className={'flex items-center'}>
                                         <Icon icon={faHdd} $alarm={alarms.disk} />
                                         <IconDescription $alarm={alarms.disk}>{bytesToString(stats.diskUsageInBytes)}</IconDescription>
                                     </div>
-                                    <p css={tw`text-xs text-neutral-500 mt-1`}>of {diskLimit}</p>
+                                    <p className={'text-xs text-neutral-500 mt-1'}>of {diskLimit}</p>
                                 </div>
                             </div>
                             <ResourceLimits />
