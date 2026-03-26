@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": [
+        "./resources/scripts/*"
+      ],
+      "@definitions/*": [
+        "./resources/scripts/api/definitions/*"
+      ],
+      "@feature/*": [
+        "./resources/scripts/components/server/features/*"
+      ],
+      "@blueprint/*": [
+        "./resources/scripts/blueprint/*"
+      ]
+    }
+  },
+  "include": [
+    "./scripts/**/*"
+  ]
+}
