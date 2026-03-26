@@ -14,69 +14,9 @@ interface Values {
     password: string;
 }
 
-/* ─── Particle canvas ─── */
-function useParticleField(canvasRef: React.RefObject<HTMLCanvasElement>) {
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d')!;
-        let W: number, H: number, animId: number;
-        let mouse = { x: -9999, y: -9999 };
-        const N = 72, LINK = 130, PR = 200, PF = 0.012;
-        type Node = { x: number; y: number; vx: number; vy: number; r: number; alpha: number };
-        let nodes: Node[] = [];
-
-        const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
-        const spawn  = () => { nodes = Array.from({ length: N }, () => ({ x: Math.random()*W, y: Math.random()*H, vx:(Math.random()-.5)*.22, vy:(Math.random()-.5)*.22, r:Math.random()*1.4+.4, alpha:Math.random()*.4+.15 })); };
-
-        const draw = () => {
-            ctx.clearRect(0, 0, W, H);
-            nodes.forEach(n => {
-                n.x += n.vx; n.y += n.vy;
-                const dx = mouse.x-n.x, dy = mouse.y-n.y, d = Math.hypot(dx,dy);
-                if (d < PR) { const f=(1-d/PR)*PF; n.vx+=dx*f; n.vy+=dy*f; }
-                n.vx *= .995; n.vy *= .995;
-                if (n.x<-10) n.x=W+10; if (n.x>W+10) n.x=-10;
-                if (n.y<-10) n.y=H+10; if (n.y>H+10) n.y=-10;
-            });
-            for (let i=0;i<nodes.length;i++) for (let j=i+1;j<nodes.length;j++) {
-                const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
-                if (d<LINK) {
-                    const t=1-d/LINK,mx=(a.x+b.x)/2,my=(a.y+b.y)/2,cd=Math.hypot(mx-mouse.x,my-mouse.y),hot=Math.max(0,1-cd/PR);
-                    const r=Math.round(108+(54-108)*hot),g=Math.round(114+(221-114)*hot),bv=Math.round(255+(171-255)*hot);
-                    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
-                    ctx.strokeStyle=`rgba(${r},${g},${bv},${t*.18})`; ctx.lineWidth=t*.8; ctx.stroke();
-                }
-            }
-            nodes.forEach(n => {
-                const cd=Math.hypot(n.x-mouse.x,n.y-mouse.y),hot=Math.max(0,1-cd/PR);
-                const r=Math.round(108+(54-108)*hot),g=Math.round(114+(221-114)*hot),bv=Math.round(255+(171-255)*hot);
-                ctx.beginPath(); ctx.arc(n.x,n.y,n.r+hot*1.2,0,Math.PI*2);
-                ctx.fillStyle=`rgba(${r},${g},${bv},${n.alpha+hot*.45})`; ctx.fill();
-            });
-            animId = requestAnimationFrame(draw);
-        };
-
-        const onResize = () => { resize(); spawn(); };
-        const onMove   = (e: MouseEvent) => { mouse.x=e.clientX; mouse.y=e.clientY; };
-        const onTouch  = (e: TouchEvent) => { mouse.x=e.touches[0].clientX; mouse.y=e.touches[0].clientY; };
-        window.addEventListener('resize', onResize);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('touchmove', onTouch, { passive: true });
-        resize(); spawn(); draw();
-        return () => {
-            cancelAnimationFrame(animId);
-            window.removeEventListener('resize', onResize);
-            window.removeEventListener('mousemove', onMove);
-            window.removeEventListener('touchmove', onTouch);
-        };
-    }, []);
-}
-
 /* ─── Main Component ─── */
 const LoginContainer = ({ history }: RouteComponentProps) => {
     const ref       = useRef<Reaptcha>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [token, setToken]    = useState('');
     const [errorMsg, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +24,6 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
     const { clearFlashes, clearAndAddHttpError } = useFlash();
     const { enabled: recaptchaEnabled, siteKey } = useStoreState((state: ApplicationStore) => state.settings.data!.recaptcha);
 
-    useParticleField(canvasRef);
     useEffect(() => { clearFlashes(); }, []);
 
     const onSubmit = (values: Values, { setSubmitting }: FormikHelpers<Values>) => {
@@ -110,7 +49,7 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
     return (
         <>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Geist+Mono:wght@300;400&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
                 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
                 :root {
                     --bg:#07080F; --surface:#0E1018; --surface2:#13151F;
@@ -119,83 +58,58 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                     --accent:#6C72FF; --accent2:#36DDAB;
                     --danger:#FF5E5E; --tg:#29A8E0;
                 }
-                body { background:var(--bg)!important; font-family:'Syne',sans-serif!important; color:var(--text)!important; overflow:hidden!important; }
-                @property --angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
-                @keyframes orbFloat { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
-                @keyframes driftA { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-30px) scale(1.05)} 66%{transform:translate(-20px,20px) scale(.97)} }
-                @keyframes driftB { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,-40px)} }
-                @keyframes driftC { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(20px,30px) scale(1.08)} 80%{transform:translate(-10px,-15px) scale(.95)} }
-                @keyframes rotateBorder { to{--angle:360deg} }
-                @keyframes cardIn { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-                @keyframes scan { from{top:-4px;opacity:1} to{top:100%;opacity:0} }
-                @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-                @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
-                @keyframes spin { to{transform:rotate(360deg)} }
+                body { background:var(--bg)!important; font-family:'Manrope',sans-serif!important; color:var(--text)!important; }
 
-                .dmh-page{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-                .dmh-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
-                .dmh-orb{position:fixed;border-radius:50%;filter:blur(110px);pointer-events:none;z-index:0}
-                .dmh-orb-1{width:520px;height:520px;background:radial-gradient(circle,rgba(108,114,255,.22) 0%,transparent 70%);top:-160px;left:-100px;animation:orbFloat 1s ease forwards,driftA 18s ease-in-out infinite 1s}
-                .dmh-orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(54,221,171,.15) 0%,transparent 70%);bottom:-100px;right:-60px;animation:orbFloat 1s ease forwards .3s,driftB 22s ease-in-out infinite 1.3s}
-                .dmh-orb-3{width:280px;height:280px;background:radial-gradient(circle,rgba(108,114,255,.12) 0%,transparent 70%);top:40%;right:12%;animation:orbFloat 1s ease forwards .5s,driftC 26s ease-in-out infinite 1.5s}
-                .dmh-wrap{position:relative;z-index:2;width:100%;max-width:420px;padding:0 16px}
-                .dmh-shell{position:relative;border-radius:18px;padding:1.5px;background:conic-gradient(from var(--angle,0deg),#6C72FF 0deg,#36DDAB 90deg,#6C72FF 180deg,#36DDAB 270deg,#6C72FF 360deg);animation:rotateBorder 6s linear infinite,cardIn .7s cubic-bezier(.22,1,.36,1) .2s both;opacity:0}
-                .dmh-card{background:var(--surface);border-radius:17px;padding:40px 38px 36px;position:relative;overflow:hidden}
+                .dmh-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:
+                    radial-gradient(circle at 20% 12%, rgba(108,114,255,.2) 0%, transparent 42%),
+                    radial-gradient(circle at 82% 84%, rgba(54,221,171,.14) 0%, transparent 40%),
+                    var(--bg)}
+                .dmh-wrap{position:relative;z-index:2;width:100%;max-width:420px;padding:20px 16px}
+                .dmh-shell{position:relative;border-radius:18px;padding:1px;background:linear-gradient(130deg, rgba(108,114,255,.65), rgba(54,221,171,.42))}
+                .dmh-card{background:var(--surface);border-radius:17px;padding:34px 30px 28px;position:relative;overflow:hidden}
                 .dmh-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(108,114,255,.5),rgba(54,221,171,.4),transparent)}
-                .dmh-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);top:-4px;filter:blur(2px);animation:scan 1.1s cubic-bezier(.4,0,.2,1) .6s both;z-index:10}
-                .dmh-brand{display:flex;align-items:center;gap:13px;margin-bottom:34px;opacity:0;animation:fadeUp .5s ease .95s forwards}
+                .dmh-brand{display:flex;align-items:center;gap:13px;margin-bottom:26px}
                 .dmh-brand-name{font-size:16px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text)}
-                .dmh-brand-sub{font-family:'Geist Mono',monospace;font-size:10px;font-weight:300;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);margin-top:3px}
-                .dmh-heading{margin-bottom:30px;opacity:0;animation:fadeUp .5s ease 1.05s forwards}
+                .dmh-brand-sub{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-top:3px}
+                .dmh-heading{margin-bottom:22px}
                 .dmh-heading h1{font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.15}
                 .dmh-heading h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-                .dmh-heading p{font-family:'Geist Mono',monospace;font-size:12px;font-weight:300;color:var(--muted2);margin-top:7px;letter-spacing:.04em}
-                .dmh-form{opacity:0;animation:fadeUp .5s ease 1.15s forwards}
+                .dmh-heading p{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:400;color:var(--muted2);margin-top:7px;letter-spacing:.03em}
+                .dmh-form{}
                 .dmh-group{margin-bottom:16px}
-                .dmh-label{display:block;font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+                .dmh-label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
                 .dmh-input-wrap{position:relative}
-                .dmh-input-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;transition:color .2s}
-                .dmh-input-wrap:focus-within svg{color:var(--accent)}
-                .dmh-input{width:100%;padding:12px 14px 12px 40px;background:var(--surface2)!important;border:1px solid var(--border)!important;border-radius:9px!important;font-family:'Syne',sans-serif!important;font-size:14px!important;color:var(--text)!important;outline:none!important;transition:border-color .2s,box-shadow .2s!important}
+                .dmh-input-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+                .dmh-input{width:100%;padding:12px 14px 12px 40px;background:var(--surface2)!important;border:1px solid var(--border)!important;border-radius:9px!important;font-family:'Manrope',sans-serif!important;font-size:14px!important;color:var(--text)!important;outline:none!important}
                 .dmh-input-pass{padding-right:84px!important}
-                .dmh-pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--accent2);font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;opacity:.9;padding:4px 6px}
+                .dmh-pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;opacity:.9;padding:4px 6px}
                 .dmh-pass-toggle:hover{opacity:1}
                 .dmh-pass-toggle:disabled{opacity:.5;cursor:not-allowed}
                 .dmh-input::placeholder{color:var(--muted);font-size:13px}
                 .dmh-input:focus{border-color:var(--accent)!important;background:#151724!important;box-shadow:0 0 0 3px rgba(108,114,255,.14),inset 0 0 0 1px rgba(108,114,255,.1)!important}
-                .dmh-field-err{color:var(--danger);font-size:11px;margin-top:5px;font-family:'Geist Mono',monospace}
+                .dmh-field-err{color:var(--danger);font-size:11px;margin-top:5px;font-family:'JetBrains Mono',monospace}
                 .dmh-row{display:flex;align-items:center;justify-content:flex-end;margin:4px 0 22px}
-                .dmh-forgot{font-size:12.5px;font-weight:500;color:var(--accent);text-decoration:none;opacity:.85;transition:opacity .15s}
+                .dmh-forgot{font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;opacity:.9}
                 .dmh-forgot:hover{opacity:1}
-                .dmh-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:linear-gradient(135deg,var(--accent) 0%,#7C6AFE 50%,var(--accent2) 100%);background-size:200% 200%;background-position:0% 50%;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border:none;border-radius:9px;cursor:pointer;transition:background-position .4s,transform .12s,box-shadow .3s;box-shadow:0 4px 20px rgba(108,114,255,.3)}
-                .dmh-btn:hover{background-position:100% 50%;box-shadow:0 6px 28px rgba(108,114,255,.45)}
-                .dmh-btn:active{transform:scale(.985)}
+                .dmh-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:linear-gradient(135deg,var(--accent) 0%,#7C6AFE 50%,var(--accent2) 100%);color:#fff;font-family:'Manrope',sans-serif;font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border:none;border-radius:9px;cursor:pointer;box-shadow:0 4px 20px rgba(108,114,255,.28)}
+                .dmh-btn:hover{box-shadow:0 6px 24px rgba(108,114,255,.38)}
                 .dmh-btn:disabled{opacity:.6;cursor:not-allowed}
-                .dmh-btn .spinning{animation:spin 1s linear infinite}
-                .dmh-error{display:flex;align-items:flex-start;gap:9px;background:rgba(255,94,94,.07);border:1px solid rgba(255,94,94,.25);border-radius:8px;padding:10px 13px;margin-bottom:16px;font-size:12.5px;color:var(--danger);line-height:1.45;animation:fadeUp .3s ease both}
-                .dmh-divider{display:flex;align-items:center;gap:12px;margin:22px 0;opacity:0;animation:fadeUp .5s ease 1.25s forwards}
+                .dmh-error{display:flex;align-items:flex-start;gap:9px;background:rgba(255,94,94,.07);border:1px solid rgba(255,94,94,.25);border-radius:8px;padding:10px 13px;margin-bottom:16px;font-size:12.5px;color:var(--danger);line-height:1.45}
+                .dmh-divider{display:flex;align-items:center;gap:12px;margin:22px 0}
                 .dmh-divider::before,.dmh-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-                .dmh-divider span{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted)}
-                .dmh-tg-block{opacity:0;animation:fadeUp .5s ease 1.32s forwards}
-                .dmh-tg-info{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted2);text-align:center;margin-bottom:12px;line-height:1.6;letter-spacing:.02em}
-                .dmh-tg-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:12px;background:transparent;border:1px solid rgba(41,168,224,.3);border-radius:9px;color:var(--tg);font-family:'Syne',sans-serif;font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s}
+                .dmh-divider span{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted)}
+                .dmh-tg-info{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);text-align:center;margin-bottom:12px;line-height:1.6;letter-spacing:.02em}
+                .dmh-tg-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:12px;background:transparent;border:1px solid rgba(41,168,224,.3);border-radius:9px;color:var(--tg);font-family:'Manrope',sans-serif;font-size:13.5px;font-weight:700;text-decoration:none;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s}
                 .dmh-tg-btn:hover{background:rgba(41,168,224,.09);border-color:rgba(41,168,224,.6);box-shadow:0 0 18px rgba(41,168,224,.15)}
-                .dmh-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:22px;font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;opacity:0;animation:fadeUp .5s ease 1.5s forwards}
-                .dmh-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);animation:pulse 2s ease-in-out infinite}
-                .dmh-footer{margin-top:12px;text-align:center;font-family:'Geist Mono',monospace;font-size:10px;line-height:1.5;color:var(--muted2);letter-spacing:.04em;opacity:0;animation:fadeUp .5s ease 1.62s forwards}
+                .dmh-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:22px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em}
+                .dmh-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+                .dmh-footer{margin-top:12px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.5;color:var(--muted2);letter-spacing:.04em}
             `}</style>
 
             <div className="dmh-page">
-                <div className="dmh-orb dmh-orb-1" />
-                <div className="dmh-orb dmh-orb-2" />
-                <div className="dmh-orb dmh-orb-3" />
-                <canvas className="dmh-canvas" ref={canvasRef} />
-
                 <div className="dmh-wrap">
                     <div className="dmh-shell">
                         <div className="dmh-card">
-                            <div className="dmh-scanline" />
-
                             {/* Brand */}
                             <div className="dmh-brand">
                                 <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
