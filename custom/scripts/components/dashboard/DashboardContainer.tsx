@@ -12,10 +12,10 @@ import tw from 'twin.macro';
 import useSWR from 'swr';
 import { PaginatedResult } from '@/api/http';
 import Pagination from '@/components/elements/Pagination';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine, faLayerGroup, faServer, faShieldHalved, faKey, faCompass } from '@fortawesome/free-solid-svg-icons';
 import type { ApplicationStore } from '@/state';
 
 import BeforeContent from '@blueprint/components/Dashboard/Serverlist/BeforeContent';
@@ -50,11 +50,52 @@ const FilterText = styled.p`
     letter-spacing: 0.08em;
 `;
 
+const StatGrid = styled.div`
+    ${tw`mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3`};
+`;
+
+const StatCard = styled.div`
+    ${tw`rounded-lg border px-3 py-3`};
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(7, 8, 15, 0.35);
+`;
+
+const StatLabel = styled.p`
+    ${tw`text-xs uppercase tracking-wider`};
+    color: #8890a4;
+`;
+
+const StatValue = styled.p`
+    ${tw`mt-1 text-lg font-semibold flex items-center gap-2`};
+    color: #e8eaf0;
+`;
+
+const ActionRow = styled.div`
+    ${tw`mt-4 flex flex-wrap gap-2`};
+`;
+
+const ActionLink = styled(Link)`
+    ${tw`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold no-underline`};
+    border-color: rgba(108, 114, 255, 0.45);
+    color: #dbe1f0;
+    background: rgba(108, 114, 255, 0.12);
+
+    &:hover {
+        border-color: rgba(108, 114, 255, 0.75);
+        background: rgba(108, 114, 255, 0.2);
+    }
+`;
+
 const EmptyState = styled.div`
     ${tw`text-center rounded-xl border px-6 py-10 text-sm`};
     border-color: rgba(255, 255, 255, 0.08);
     color: #9aa2b5;
     background: rgba(14, 16, 24, 0.75);
+`;
+
+const EmptyIcon = styled.div`
+    ${tw`text-xl mb-3`};
+    color: #7f8aab;
 `;
 
 export default () => {
@@ -88,6 +129,9 @@ export default () => {
         if (!error) clearFlashes('dashboard');
     }, [error]);
 
+    const totalServers = servers?.pagination.total ?? 0;
+    const currentPage = servers?.pagination.currentPage ?? page;
+
     return (
         <PageContentBlock title={'Dashboard'} showFlashKey={'dashboard'}>
             <BeforeContent />
@@ -112,6 +156,41 @@ export default () => {
                         />
                     </FilterWrap>
                 )}
+
+                <StatGrid>
+                    <StatCard>
+                        <StatLabel>Total Servers</StatLabel>
+                        <StatValue>
+                            <FontAwesomeIcon icon={faServer} />
+                            {totalServers}
+                        </StatValue>
+                    </StatCard>
+                    <StatCard>
+                        <StatLabel>Current Page</StatLabel>
+                        <StatValue>
+                            <FontAwesomeIcon icon={faCompass} />
+                            {currentPage}
+                        </StatValue>
+                    </StatCard>
+                    <StatCard>
+                        <StatLabel>Visibility</StatLabel>
+                        <StatValue>
+                            <FontAwesomeIcon icon={faShieldHalved} />
+                            {showOnlyAdmin ? 'All Servers' : 'My Servers'}
+                        </StatValue>
+                    </StatCard>
+                </StatGrid>
+
+                <ActionRow>
+                    <ActionLink to={'/account'}>
+                        <FontAwesomeIcon icon={faShieldHalved} />
+                        Account Settings
+                    </ActionLink>
+                    <ActionLink to={'/account/api'}>
+                        <FontAwesomeIcon icon={faKey} />
+                        API Credentials
+                    </ActionLink>
+                </ActionRow>
             </DashboardHead>
 
             {!servers ? (
@@ -125,9 +204,15 @@ export default () => {
                             ))
                         ) : (
                             <EmptyState>
+                                <EmptyIcon>
+                                    <FontAwesomeIcon icon={faServer} />
+                                </EmptyIcon>
                                 {showOnlyAdmin
                                     ? 'There are no other servers to display.'
                                     : 'There are no servers associated with your account.'}
+                                <div className={'mt-4'}>
+                                    <ActionLink to={'/account'}>Open Account</ActionLink>
+                                </div>
                             </EmptyState>
                         )
                     }
