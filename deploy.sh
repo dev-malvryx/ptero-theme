@@ -232,8 +232,7 @@ ok "Caches cleared"
 if command -v systemctl >/dev/null 2>&1; then
   RESTARTED_SERVICE=""
   for svc in pteroq pterodactyl-queue-worker pterodactyl-queue queue-worker; do
-    if systemctl list-unit-files | grep -q "^${svc}\\.service"; then
-      systemctl restart "$svc"
+    if systemctl restart "$svc" >/dev/null 2>&1; then
       RESTARTED_SERVICE="$svc"
       break
     fi
