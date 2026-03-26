@@ -15,7 +15,7 @@ import Pagination from '@/components/elements/Pagination';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faLayerGroup, faServer, faShieldHalved, faKey, faCompass } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine, faLayerGroup, faServer, faShieldAlt as faShieldHalved, faKey, faCompass } from '@fortawesome/free-solid-svg-icons';
 import type { ApplicationStore } from '@/state';
 
 import BeforeContent from '@blueprint/components/Dashboard/Serverlist/BeforeContent';
