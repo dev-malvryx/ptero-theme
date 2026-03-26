@@ -198,6 +198,22 @@ fi
 log "Building panel assets..."
 cd "$PTERO_DIR"
 
+if command -v node >/dev/null 2>&1; then
+  NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
+  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR >= 17 )); then
+    if [[ "${NODE_OPTIONS:-}" != *"--openssl-legacy-provider"* ]]; then
+      if [[ -n "${NODE_OPTIONS:-}" ]]; then
+        export NODE_OPTIONS="${NODE_OPTIONS} --openssl-legacy-provider"
+      else
+        export NODE_OPTIONS="--openssl-legacy-provider"
+      fi
+    fi
+    warn "Node $NODE_MAJOR detected; enabling --openssl-legacy-provider for webpack compatibility."
+  fi
+else
+  warn "Node was not found in PATH before build step."
+fi
+
 if command -v yarn >/dev/null 2>&1; then
   yarn build:production
 elif command -v npm >/dev/null 2>&1; then
@@ -214,11 +230,19 @@ php artisan view:clear
 ok "Caches cleared"
 
 if command -v systemctl >/dev/null 2>&1; then
-  if systemctl list-unit-files | grep -q '^pteroq\\.service'; then
-    systemctl restart pteroq
-    ok "Service restarted: pteroq"
+  RESTARTED_SERVICE=""
+  for svc in pteroq pterodactyl-queue-worker pterodactyl-queue queue-worker; do
+    if systemctl list-unit-files | grep -q "^${svc}\\.service"; then
+      systemctl restart "$svc"
+      RESTARTED_SERVICE="$svc"
+      break
+    fi
+  done
+
+  if [[ -n "$RESTARTED_SERVICE" ]]; then
+    ok "Service restarted: $RESTARTED_SERVICE"
   else
-    warn "pteroq service not found; skipped restart."
+    warn "No known queue systemd service found (pteroq/pterodactyl-queue-worker). If you use Supervisor or Docker, restart the queue there instead."
   fi
 else
   warn "systemctl not available; skipped service restart."

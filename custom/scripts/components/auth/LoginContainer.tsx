@@ -79,6 +79,7 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [token, setToken]    = useState('');
     const [errorMsg, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const { clearFlashes, clearAndAddHttpError } = useFlash();
     const { enabled: recaptchaEnabled, siteKey } = useStoreState((state: ApplicationStore) => state.settings.data!.recaptcha);
@@ -156,6 +157,10 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                 .dmh-input-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;transition:color .2s}
                 .dmh-input-wrap:focus-within svg{color:var(--accent)}
                 .dmh-input{width:100%;padding:12px 14px 12px 40px;background:var(--surface2)!important;border:1px solid var(--border)!important;border-radius:9px!important;font-family:'Syne',sans-serif!important;font-size:14px!important;color:var(--text)!important;outline:none!important;transition:border-color .2s,box-shadow .2s!important}
+                .dmh-input-pass{padding-right:84px!important}
+                .dmh-pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--accent2);font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;opacity:.9;padding:4px 6px}
+                .dmh-pass-toggle:hover{opacity:1}
+                .dmh-pass-toggle:disabled{opacity:.5;cursor:not-allowed}
                 .dmh-input::placeholder{color:var(--muted);font-size:13px}
                 .dmh-input:focus{border-color:var(--accent)!important;background:#151724!important;box-shadow:0 0 0 3px rgba(108,114,255,.14),inset 0 0 0 1px rgba(108,114,255,.1)!important}
                 .dmh-field-err{color:var(--danger);font-size:11px;margin-top:5px;font-family:'Geist Mono',monospace}
@@ -177,6 +182,7 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                 .dmh-tg-btn:hover{background:rgba(41,168,224,.09);border-color:rgba(41,168,224,.6);box-shadow:0 0 18px rgba(41,168,224,.15)}
                 .dmh-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:22px;font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;opacity:0;animation:fadeUp .5s ease 1.5s forwards}
                 .dmh-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);animation:pulse 2s ease-in-out infinite}
+                .dmh-footer{margin-top:12px;text-align:center;font-family:'Geist Mono',monospace;font-size:10px;line-height:1.5;color:var(--muted2);letter-spacing:.04em;opacity:0;animation:fadeUp .5s ease 1.62s forwards}
             `}</style>
 
             <div className="dmh-page">
@@ -210,8 +216,8 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                                     <circle cx="5" cy="12" r="1.5" fill="#6C72FF" opacity="0.6"/>
                                 </svg>
                                 <div>
-                                    <div className="dmh-brand-name">Dev Malvryx Hosting</div>
-                                    <div className="dmh-brand-sub">Hosting Platform</div>
+                                    <div className="dmh-brand-name">DEV MALVRYX</div>
+                                    <div className="dmh-brand-sub">HOSTING PLATFORM</div>
                                 </div>
                             </div>
 
@@ -254,8 +260,11 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                                         <div className="dmh-group">
                                             <label className="dmh-label" htmlFor="password">Password</label>
                                             <div className="dmh-input-wrap">
-                                                <input className="dmh-input" id="password" type="password" name="password" placeholder="••••••••••••" value={values.password} onChange={handleChange} onBlur={handleBlur} disabled={isSubmitting} autoComplete="current-password"/>
+                                                <input className="dmh-input dmh-input-pass" id="password" type={showPassword ? 'text' : 'password'} name="password" placeholder="••••••••••••" value={values.password} onChange={handleChange} onBlur={handleBlur} disabled={isSubmitting} autoComplete="current-password"/>
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                <button className="dmh-pass-toggle" type="button" onClick={() => setShowPassword((value) => !value)} disabled={isSubmitting}>
+                                                    {showPassword ? 'Hide' : 'Show'}
+                                                </button>
                                             </div>
                                             {touched.password && errors.password && <div className="dmh-field-err">{errors.password}</div>}
                                         </div>
@@ -306,6 +315,10 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                             <div className="dmh-status">
                                 <div className="dmh-dot" />
                                 <span>All systems operational</span>
+                            </div>
+                            <div className="dmh-footer">
+                                Owned &amp; developed by Dev Malvryx<br/>
+                                Dev Malvryx Hosting Company
                             </div>
                         </div>
                     </div>
